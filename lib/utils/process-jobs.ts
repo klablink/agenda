@@ -60,6 +60,12 @@ export const processJobs = async function (this: Agenda, extraJob: Job) {
   function shouldLock(name: string): boolean {
     const jobDefinition = definitions[name];
     let shouldLock = true;
+
+    // Should not lock job if running is greater than or equal to concurrency
+    if (jobDefinition.running >= jobDefinition.concurrency) {
+      shouldLock = false;
+    }
+
     if (self._lockLimit && self._lockLimit <= self._lockedJobs.length) {
       shouldLock = false;
     }
