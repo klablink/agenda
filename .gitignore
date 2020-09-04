@@ -2,6 +2,7 @@ node_modules
 coverage.html
 .idea
 .DS_Store
+.npmrc
 docs/agenda/*
 !docs/agenda/1.0.3/
 !docs/agenda/2.0.0/
