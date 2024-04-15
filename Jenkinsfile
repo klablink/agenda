@@ -22,7 +22,8 @@ pipeline {
                   withNpmLectraSaasConfig {
                     insideDockerWithIdentity("node:14-alpine","") {
                       sh "apk update && apk add git openssh-client"
-                      sh "npm i"    
+                      sh "npm i" 
+                      sh "npm run build"
                       sh "npm publish"
                     }
                   }
