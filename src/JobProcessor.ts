@@ -163,6 +163,11 @@ export class JobProcessor {
 	shouldLock(name: string): boolean {
 		const jobDefinition = this.agenda.definitions[name];
 		let shouldLock = true;
+    // Should not lock job if running is greater than or equal to concurrency
+    // TODO: MLU check this
+    //if (jobDefinition.running >= jobDefinition.concurrency) {
+    //  shouldLock = false;
+    //}
 		// global lock limit
 		if (this.totalLockLimit && this.lockedJobs.length >= this.totalLockLimit) {
 			shouldLock = false;

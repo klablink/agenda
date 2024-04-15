@@ -1,7 +1,7 @@
 {
-  "name": "agenda",
-  "version": "5.0.0",
-  "description": "Light weight job scheduler for Node.js",
+  "name": "@kubix/agenda",
+  "version": "5.0.0.",
+  "description": "Light weight job scheduler for Node.js - Fork of 4.2.2 for fixing agenda#1077",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "publishConfig": {
@@ -80,5 +80,6 @@
     "ts-node": "^10.9.1",
     "typedoc": "^0.23.10",
     "typescript": "^4.7.4"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }
