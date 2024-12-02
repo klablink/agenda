@@ -11,7 +11,7 @@
     "dist"
   ],
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=20.0.0"
   },
   "scripts": {
     "release": "npm run build && standard-version",
@@ -56,7 +56,7 @@
     "debug": "^4.3.7",
     "human-interval": "^2.0.1",
     "luxon": "^3.5.0",
-    "mongodb": "^4.8.1"
+    "mongodb": "^6.11.0"
   },
   "devDependencies": {
     "eslint": "^8.21.0",
