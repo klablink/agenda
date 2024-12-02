@@ -12,17 +12,17 @@ pipeline {
         disableResume()
     }
 
-    stages {     
+    stages {
         stage('publish npm') {
             steps {
                 // Clean before build
                 cleanWs()
                 container("docker") {
-                  checkoutScm()                
+                  checkoutScm()
                   withNpmLectraSaasConfig {
-                    insideDockerWithIdentity("node:14-alpine","") {
+                    insideDockerWithIdentity("node:22-alpine","") {
                       sh "apk update && apk add git openssh-client"
-                      sh "npm i" 
+                      sh "npm i"
                       sh "npm run build"
                       sh "npm publish"
                     }
