@@ -6,7 +6,7 @@ import * as assert from 'node:assert';
 import { DateTime } from 'luxon';
 import { Db } from 'mongodb';
 
-import * as delay from 'delay';
+import {setTimeout} from 'node:timers/promises';
 import * as sinon from 'sinon';
 import { fail } from 'assert';
 import { Job } from '../src/Job';
@@ -46,7 +46,7 @@ describe('Job', () => {
 					mongo: mongoDb
 				},
 				async () => {
-					await delay(50);
+					await setTimeout(50);
 					await clearJobs();
 					agenda.define('someJob', jobProcessor);
 					agenda.define('send email', jobProcessor);
@@ -59,7 +59,7 @@ describe('Job', () => {
 	});
 
 	afterEach(async () => {
-		await delay(50);
+		await setTimeout(50);
 		await agenda.stop();
 		await clearJobs();
 		// await mongoClient.disconnect();
@@ -388,9 +388,7 @@ describe('Job', () => {
 	describe('run', () => {
 		beforeEach(async () => {
 			agenda.define('testRun', (_job, done) => {
-				setTimeout(() => {
-					done();
-				}, 100);
+        setTimeout(100).then(()=>done())
 			});
 		});
 
@@ -398,7 +396,7 @@ describe('Job', () => {
 			const job = new Job(agenda, { name: 'testRun', type: 'normal' });
 			await job.save();
 			const now = new Date();
-			await delay(5);
+			await setTimeout(5);
 			await job.run();
 
 			expect(job.attrs.lastRunAt?.valueOf()).to.greaterThan(now.valueOf());
@@ -421,7 +419,7 @@ describe('Job', () => {
 
 			const now = new Date();
 			job.repeatEvery('10 minutes');
-			await delay(5);
+			await setTimeout(5);
 			await job.run();
 			expect(job.attrs.nextRunAt?.valueOf()).to.greaterThan(now.valueOf() + 59999);
 		});
@@ -462,7 +460,7 @@ describe('Job', () => {
 			agenda.once('success:async', successSpy);
 
 			agenda.define('async', async () => {
-				await delay(5);
+				await setTimeout(5);
 				finished = true;
 			});
 
@@ -482,7 +480,7 @@ describe('Job', () => {
 			agenda.once('fail:asyncFail', failSpy);
 
 			agenda.define('asyncFail', async () => {
-				await delay(5);
+				await setTimeout(5);
 				throw err;
 			});
 
@@ -502,7 +500,7 @@ describe('Job', () => {
 
 			agenda.define('asyncCb', async (_job, cb) => {
 				(async () => {
-					await delay(5);
+					await setTimeout(5);
 					finishedCb = true;
 					cb();
 				})();
@@ -524,7 +522,7 @@ describe('Job', () => {
 
 			agenda.define('asyncCbError', async (_job, cb) => {
 				(async () => {
-					await delay(5);
+					await setTimeout(5);
 					cb(err);
 				})();
 			});
@@ -546,7 +544,7 @@ describe('Job', () => {
 
 			agenda.define('asyncCbTwoError', async (_job, cb) => {
 				(async () => {
-					await delay(5);
+					await setTimeout(5);
 					cb(cbErr);
 				})();
 
@@ -571,7 +569,7 @@ describe('Job', () => {
 
 			agenda.define('asyncCbTwoErrorCb', async (_job, cb) => {
 				cb(cbErr);
-				await delay(5);
+				await setTimeout(5);
 				throw fnErr;
 			});
 
@@ -607,7 +605,7 @@ describe('Job', () => {
 			const lockedAt = new Date();
 			const job = new Job(agenda, { name: 'some job', type: 'normal', lockedAt });
 			await job.save();
-			await delay(2);
+			await setTimeout(2);
 			await job.touch();
 			expect(job.attrs.lockedAt).to.greaterThan(lockedAt);
 		});
@@ -707,9 +705,7 @@ describe('Job', () => {
 			expect(
 				await Promise.race([
 					processed,
-					new Promise(resolve => {
-						setTimeout(() => resolve(`not processed`), 1100);
-					})
+          setTimeout(1100).then(()=>`not processed`)
 				])
 			).to.eq('processed');
 
@@ -723,9 +719,7 @@ describe('Job', () => {
 			expect(
 				await Promise.race([
 					processedStopped,
-					new Promise(resolve => {
-						setTimeout(() => resolve(`not processed`), 1100);
-					})
+          setTimeout(1100).then(()=>`not processed`)
 				])
 			).to.eq('not processed');
 		});
@@ -739,7 +733,7 @@ describe('Job', () => {
 			const job = await agenda.create('disabledJob').disable().schedule('now');
 			await job.save();
 			await agenda.start();
-			await delay(jobTimeout);
+			await setTimeout(jobTimeout);
 
 			expect(ran).to.equal(false);
 
@@ -752,7 +746,7 @@ describe('Job', () => {
 
 			await job.save();
 
-			await delay(jobTimeout);
+			await setTimeout(jobTimeout);
 			await agenda.stop();
 		});
 
@@ -765,7 +759,7 @@ describe('Job', () => {
 			agenda.processEvery('1 second');
 
 			await agenda.start();
-			await delay(jobTimeout);
+			await setTimeout(jobTimeout);
 			const jobStarted = await agenda.db.getJobs({ name: 'longRunningJob' });
 			expect(jobStarted[0].lockedAt).to.not.equal(null);
 			await agenda.stop();
@@ -927,13 +921,9 @@ describe('Job', () => {
 						runCount++;
 						if (runCount === 1) {
 							// this should time out
-							await new Promise(longResolve => {
-								setTimeout(longResolve, 1000);
-							});
+              await setTimeout(1000);
 						} else {
-							await new Promise(longResolve => {
-								setTimeout(longResolve, 10);
-							});
+              await setTimeout(10);
 							resolve(runCount);
 						}
 					},
@@ -964,10 +954,7 @@ describe('Job', () => {
 				'lock job',
 				(job, cb) => {
 					history.push(job.attrs.data.i);
-
-					setTimeout(() => {
-						cb();
-					}, 150);
+          setTimeout(150).then(()=>cb());
 				},
 				{
 					lockLifetime: 300
@@ -983,7 +970,7 @@ describe('Job', () => {
 				agenda.now('lock job', { i: 3 })
 			]);
 
-			await delay(500);
+			await setTimeout(500);
 			expect(history).to.have.length(3);
 			expect(history).to.contain(1);
 			expect(history).to.contain(2);
@@ -1002,7 +989,7 @@ describe('Job', () => {
 			await Promise.all([agenda.now('lock job', { i: 1 }), agenda.now('lock job', { i: 2 })]);
 
 			// give it some time to get picked up
-			await delay(200);
+			await setTimeout(200);
 
 			expect((await agenda.getRunningStats()).lockedJobs).to.equal(1);
 		});
@@ -1026,7 +1013,7 @@ describe('Job', () => {
 				agenda.now('lock job2', { i: 5 })
 			]);
 
-			await delay(500);
+			await setTimeout(500);
 			expect((await agenda.getRunningStats()).lockedJobs).to.equal(1);
 			await agenda.stop();
 		});
@@ -1038,7 +1025,7 @@ describe('Job', () => {
 
 			await Promise.all([agenda.now('lock job', { i: 1 }), agenda.now('lock job', { i: 2 })]);
 
-			await delay(500);
+			await setTimeout(500);
 			expect((await agenda.getRunningStats()).lockedJobs).to.equal(1);
 		});
 
@@ -1057,7 +1044,7 @@ describe('Job', () => {
 				agenda.schedule(when, 'lock job', { i: 2 })
 			]);
 
-			await delay(500);
+			await setTimeout(500);
 			expect((await agenda.getRunningStats()).lockedJobs).to.equal(1);
 		});
 
@@ -1075,7 +1062,7 @@ describe('Job', () => {
 				agenda.schedule(when, 'lock job', { i: 2 })
 			]);
 
-			await delay(500);
+			await setTimeout(500);
 			expect((await agenda.getRunningStats()).lockedJobs).to.equal(1);
 			await agenda.stop();
 		});
@@ -1092,7 +1079,7 @@ describe('Job', () => {
 				'blocking',
 				(job, cb) => {
 					processed.push(job.attrs.data.i);
-					setTimeout(cb, 400);
+					setTimeout(400).then(()=>cb);
 				},
 				{
 					concurrency: 1
@@ -1129,13 +1116,14 @@ describe('Job', () => {
 			]);
 
 			try {
-				const results: number[] = await Promise.race([
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+				// @ts-ignore
+        const results: number[] = await Promise.race([
 					checkResultsPromise,
 					// eslint-disable-next-line prefer-promise-reject-errors
 					new Promise<number[]>((_, reject) => {
-						setTimeout(() => {
-							reject(`not processed`);
-						}, 2000);
+            // eslint-disable-next-line prefer-promise-reject-errors
+            setTimeout(2000).then(()=>reject(`not processed`))
 					})
 				]);
 				expect(results).not.to.contain(2);
@@ -1165,19 +1153,20 @@ describe('Job', () => {
 			await agenda.start();
 
 			await agenda.now('fifo');
-			await delay(50);
+			await setTimeout(50);
 			await agenda.now('fifo');
-			await delay(50);
+			await setTimeout(50);
 			await agenda.now('fifo');
-			await delay(50);
+			await setTimeout(50);
 			try {
-				const results: number[] = await Promise.race([
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+				// @ts-ignore
+        const results: number[] = await Promise.race([
 					checkResultsPromise,
 					// eslint-disable-next-line prefer-promise-reject-errors
 					new Promise<number[]>((_, reject) => {
-						setTimeout(() => {
-							reject(`not processed`);
-						}, 2000);
+            // eslint-disable-next-line prefer-promise-reject-errors
+            setTimeout(2000).then(()=>reject(`not processed`))
 					})
 				]);
 				expect(results.join('')).to.eql(results.sort().join(''));
@@ -1190,7 +1179,7 @@ describe('Job', () => {
 		it('should run jobs as first in first out (FIFO) with respect to priority', async () => {
 			const now = Date.now();
 
-			agenda.define('fifo-priority', (_job, cb) => setTimeout(cb, 100), { concurrency: 1 });
+			agenda.define('fifo-priority', (_job, cb) => setTimeout(100).then(()=>cb()), { concurrency: 1 });
 
 			const checkResultsPromise = new Promise(resolve => {
 				const times: number[] = [];
@@ -1226,9 +1215,8 @@ describe('Job', () => {
 					checkResultsPromise,
 					// eslint-disable-next-line prefer-promise-reject-errors
 					new Promise<any>((_, reject) => {
-						setTimeout(() => {
-							reject(`not processed`);
-						}, 2000);
+            // eslint-disable-next-line prefer-promise-reject-errors
+            setTimeout(2000).then(()=>reject(`not processed`))
 					})
 				]);
 
@@ -1245,7 +1233,7 @@ describe('Job', () => {
 			// <https://github.com/agenda/agenda/pull/451/commits/336ff6445803606a6dc468a6f26c637145790adc>
 			const now = new Date();
 
-			agenda.define('priority', (_job, cb) => setTimeout(cb, 10), { concurrency: 1 });
+			agenda.define('priority', (_job, cb) => setTimeout(10).then(()=>cb()), { concurrency: 1 });
 
 			const checkResultsPromise = new Promise(resolve => {
 				const results: number[] = [];
@@ -1271,9 +1259,8 @@ describe('Job', () => {
 					checkResultsPromise,
 					// eslint-disable-next-line prefer-promise-reject-errors
 					new Promise((_, reject) => {
-						setTimeout(() => {
-							reject(`not processed`);
-						}, 2000);
+            // eslint-disable-next-line prefer-promise-reject-errors
+            setTimeout(2000).then(()=>reject(`not processed`))
 					})
 				]);
 				expect(results).to.eql([10, 0, -10]);
@@ -1314,7 +1301,7 @@ describe('Job', () => {
 			await agenda.start();
 
 			await agenda.jobs({ name: 'everyRunTest1' });
-			await delay(jobTimeout);
+			await setTimeout(jobTimeout);
 			expect(counter).to.equal(2);
 
 			await agenda.stop();
@@ -1334,7 +1321,7 @@ describe('Job', () => {
 
 			await agenda.start();
 
-			await delay(jobTimeout);
+			await setTimeout(jobTimeout);
 			const result = await agenda.jobs({ name: 'everyRunTest2' });
 
 			expect(result).to.have.length(1);
@@ -1431,7 +1418,7 @@ describe('Job', () => {
 				await job.save();
 				await agenda.start();
 
-				await delay(jobTimeout);
+				await setTimeout(jobTimeout);
 				await agenda.jobs({ name: 'everyDisabledTest' });
 				expect(counter).to.equal(0);
 				await agenda.stop();
@@ -1577,7 +1564,7 @@ describe('Job', () => {
 
 				await Promise.all([...new Array(10)].map(() => agenda.now('test-job')));
 
-				await delay(jobTimeout);
+				await setTimeout(jobTimeout);
 				const ids = Object.keys(runCount);
 				expect(ids).to.have.length(10);
 				Object.keys(runCount).forEach(id => {
@@ -1589,9 +1576,7 @@ describe('Job', () => {
 
 	it('checks database for running job on "client"', async () => {
 		agenda.define('test', async () => {
-			await new Promise(resolve => {
-				setTimeout(resolve, 30000);
-			});
+      await setTimeout(30000)
 		});
 
 		const job = await agenda.now('test');
@@ -1625,7 +1610,7 @@ describe('Job', () => {
 		do {
 			jobStarted = await agenda.db.getJobs({ name: 'test' });
 			if (!jobStarted[0].lockedAt) {
-				delay(100);
+        setTimeout(100).then();
 			}
 			retried++;
 		} while (!jobStarted[0].lockedAt || retried > 10);
@@ -1643,11 +1628,7 @@ describe('Job', () => {
 		});
 
 		await Promise.race([
-			new Promise<void>(resolve => {
-				setTimeout(() => {
-					resolve();
-				}, 1000);
-			}),
+			setTimeout(1000),
 			completed
 		]);
 
@@ -1691,7 +1672,7 @@ describe('Job', () => {
 
 			do {
 				// console.log('.');
-				await delay(50);
+				await setTimeout(50);
 			} while (await job.isRunning());
 
 			const jobDataFinished = await agenda.db.getJobById(job.attrs._id as any);
@@ -1734,7 +1715,7 @@ describe('Job', () => {
 
 			do {
 				// console.log('.');
-				await delay(50);
+				await setTimeout(50);
 			} while (await job.isRunning());
 
 			const jobDataFinished = await agenda.db.getJobById(job.attrs._id as any);
@@ -1777,7 +1758,7 @@ describe('Job', () => {
 
 			do {
 				// console.log('.');
-				await delay(50);
+				await setTimeout(50);
 			} while (await job.isRunning());
 
 			const jobDataFinished = await agenda.db.getJobById(job.attrs._id as any);
