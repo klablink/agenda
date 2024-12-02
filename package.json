@@ -1,6 +1,6 @@
 {
   "name": "@kubix/agenda",
-  "version": "4.0.1",
+  "version": "5.0.2",
   "description": "Light weight job scheduler for Node.js - Fork of 4.2.2 for fixing agenda#1077",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
