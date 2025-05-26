@@ -1,4 +1,4 @@
-import * as debug from 'debug';
+import debug from 'debug';
 import {
 	Collection,
 	Db,
@@ -8,7 +8,8 @@ import {
 	MongoClientOptions,
 	ObjectId,
 	Sort,
-	UpdateFilter
+	UpdateFilter,
+	ModifyResult
 } from 'mongodb';
 import type { Job, JobWithId } from './Job';
 import type { Agenda } from './index';
@@ -118,7 +119,7 @@ export class JobDbRepository {
 			options
 		);
 
-		return resp?.value || undefined;
+		return resp || undefined;
 	}
 
 	async getNextJobToRun(
@@ -162,10 +163,10 @@ export class JobDbRepository {
 		const result = await this.collection.findOneAndUpdate(
 			JOB_PROCESS_WHERE_QUERY,
 			JOB_PROCESS_SET_QUERY,
-			JOB_RETURN_QUERY
+			JOB_RETURN_QUERY,
 		);
 
-		return result.value || undefined;
+		return result || undefined;
 	}
 
 	async connect(): Promise<void> {
@@ -315,7 +316,7 @@ export class JobDbRepository {
 					update,
 					{ returnDocument: 'after' }
 				);
-				return this.processDbResult(job, result.value as IJobParameters<DATA>);
+				return this.processDbResult(job, result as IJobParameters<DATA>);
 			}
 
 			if (props.type === 'single') {
@@ -344,7 +345,7 @@ export class JobDbRepository {
 					})
 				);
 				// this call ensure a job of this name can only exists once
-				const result = await this.collection.findOneAndUpdate(
+				const result:	ModifyResult<IJobParameters<unknown>> = await this.collection.findOneAndUpdate(
 					{
 						name: props.name,
 						type: 'single'
@@ -352,12 +353,14 @@ export class JobDbRepository {
 					update,
 					{
 						upsert: true,
-						returnDocument: 'after'
+						returnDocument: 'after',
+						includeResultMetadata: true
 					}
 				);
+
 				log(
 					`findOneAndUpdate(${props.name}) with type "single" ${
-						result.lastErrorObject?.updatedExisting
+						result?.lastErrorObject?.updatedExisting
 							? 'updated existing entry'
 							: 'inserted new entry'
 					}`
@@ -379,7 +382,7 @@ export class JobDbRepository {
 					upsert: true,
 					returnDocument: 'after'
 				});
-				return this.processDbResult(job, result.value as IJobParameters<DATA>);
+				return this.processDbResult(job, result as IJobParameters<DATA>);
 			}
 
 			// If all else fails, the job does not exist yet so we just insert it into MongoDB

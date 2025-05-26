@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { Db } from 'mongodb';
-import * as delay from 'delay';
 import { mockMongo } from './helpers/mock-mongodb';
+import { setTimeout } from 'node:timers/promises';
 
 import { Agenda } from '../src';
 
@@ -32,7 +32,7 @@ describe('Retry', () => {
 					mongo: mongoDb
 				},
 				async () => {
-					await delay(50);
+					await setTimeout(50);
 					await clearJobs();
 					agenda.define('someJob', jobProcessor);
 					agenda.define('send email', jobProcessor);
@@ -45,7 +45,7 @@ describe('Retry', () => {
 	});
 
 	afterEach(async () => {
-		await delay(50);
+		await setTimeout(50);
 		await agenda.stop();
 		await clearJobs();
 		// await mongoClient.disconnect();

@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import * as debug from 'debug';
+import debug from 'debug';
 
 import type { Db, Filter, MongoClientOptions, Sort } from 'mongodb';
 import { SortDirection } from 'mongodb';

@@ -1,4 +1,4 @@
-import * as debug from 'debug';
+import debug from 'debug';
 import type { IAgendaJobStatus, IAgendaStatus } from './types/AgendaStatus';
 import type { IJobDefinition } from './types/JobDefinition';
 import type { Agenda, JobWithId } from './index';
@@ -77,7 +77,7 @@ export class JobProcessor {
 
 	private nextScanAt = new Date();
 
-	private jobQueue: JobProcessingQueue = new JobProcessingQueue(this.agenda);
+	private jobQueue: JobProcessingQueue;
 
 	private runningJobs: JobWithId[] = [];
 
@@ -100,6 +100,7 @@ export class JobProcessor {
 		private processEvery: number
 	) {
 		log('creating interval to call processJobs every [%dms]', processEvery);
+		this.jobQueue = new JobProcessingQueue(this.agenda)
 		this.processInterval = setInterval(() => this.process(), processEvery);
 		this.process();
 	}

@@ -1,6 +1,6 @@
 /* eslint-disable no-console,no-unused-expressions,@typescript-eslint/no-unused-expressions */
 
-import * as delay from 'delay';
+import { setTimeout } from 'node:timers/promises';
 import { Db } from 'mongodb';
 import { expect } from 'chai';
 import { mockMongo } from './helpers/mock-mongodb';
@@ -41,7 +41,7 @@ describe('Agenda', () => {
 					mongo: mongoDb
 				},
 				async () => {
-					await delay(50);
+					await setTimeout(50);
 					await clearJobs();
 					globalAgenda.define('someJob', jobProcessor);
 					globalAgenda.define('send email', jobProcessor);
@@ -54,7 +54,7 @@ describe('Agenda', () => {
 	});
 
 	afterEach(async () => {
-		await delay(50);
+		await setTimeout(50);
 		if (globalAgenda) {
 			await globalAgenda.stop();
 			await clearJobs();
@@ -245,11 +245,11 @@ describe('Agenda', () => {
 				});
 				it('should update a job that was previously scheduled with `every`', async () => {
 					await globalAgenda.every(10, 'shouldBeSingleJob');
-					await delay(10);
+					await setTimeout(10);
 					await globalAgenda.every(20, 'shouldBeSingleJob');
 
 					// Give the saves a little time to propagate
-					await delay(jobTimeout);
+					await setTimeout(jobTimeout);
 
 					const res = await globalAgenda.jobs({ name: 'shouldBeSingleJob' });
 					expect(res).to.have.length(1);
@@ -318,7 +318,7 @@ describe('Agenda', () => {
 						.schedule('now')
 						.save();
 
-					await delay(100);
+					await setTimeout(100);
 
 					const job2 = await globalAgenda
 						.create('unique job', {
@@ -337,18 +337,13 @@ describe('Agenda', () => {
 						job2.attrs.nextRunAt!.toISOString()
 					);
 
-					mongoDb
+					const jobs = await mongoDb
 						.collection('agendaJobs')
 						.find({
 							name: 'unique job'
 						})
-						.toArray((err, jobs) => {
-							if (err) {
-								throw err;
-							}
-
-							expect(jobs).to.have.length(1);
-						});
+						.toArray();
+					expect(jobs).to.have.length(1);
 				});
 
 				it('should not modify job when unique matches and insertOnly is set to true', async () => {
@@ -390,18 +385,13 @@ describe('Agenda', () => {
 
 					expect(job1.attrs.nextRunAt!.toISOString()).to.equal(job2.attrs.nextRunAt!.toISOString());
 
-					mongoDb
+					const jobs = await mongoDb
 						.collection('agendaJobs')
 						.find({
 							name: 'unique job'
 						})
-						.toArray((err, jobs) => {
-							if (err) {
-								throw err;
-							}
-
-							expect(jobs).to.have.length(1);
-						});
+						.toArray();
+					expect(jobs).to.have.length(1);
 				});
 			});
 
@@ -438,18 +428,13 @@ describe('Agenda', () => {
 						.schedule(time)
 						.save();
 
-					mongoDb
+					const jobs = await mongoDb
 						.collection('agendaJobs')
 						.find({
 							name: 'unique job'
 						})
-						.toArray((err, jobs) => {
-							if (err) {
-								throw err;
-							}
-
-							expect(jobs).to.have.length(2);
-						});
+						.toArray();
+					expect(jobs).to.have.length(2);
 				});
 			});
 		});
@@ -680,7 +665,7 @@ describe('Agenda', () => {
 
 			await globalAgenda.now('failing job');
 
-			await delay(500);
+			await setTimeout(500);
 
 			process.removeListener('unhandledRejection', rejectionsHandler);
 
@@ -699,9 +684,7 @@ describe('Agenda', () => {
 			globalAgenda.define(
 				'very short timeout',
 				(_job, done) => {
-					setTimeout(() => {
-						done();
-					}, 10000);
+					setTimeout(10000).then(() => done());
 				},
 				{
 					lockLifetime: 100
@@ -719,7 +702,7 @@ describe('Agenda', () => {
 			// await globalAgenda.every('1 seconds', 'j0');
 			await globalAgenda.now('very short timeout');
 
-			await delay(500);
+			await setTimeout(500);
 
 			process.removeListener('unhandledRejection', rejectionsHandler);
 
@@ -767,7 +750,7 @@ describe('Agenda', () => {
 			await globalAgenda.every('10 seconds', 'j2');
 			await globalAgenda.every('15 seconds', 'j3');
 
-			await delay(3001);
+			await setTimeout(3001);
 
 			process.removeListener('unhandledRejection', rejectionsHandler);
 
