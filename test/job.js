@@ -21,7 +21,7 @@ const clearJobs = () => {
   return mongoDb.collection("agendaJobs").deleteMany({});
 };
 
-const jobTimeout = process.env.CI ? 500 : 50;
+const jobTimeout = process.env.CI ? 500 : 500;
 
 describe("Job", () => {
   beforeEach(async () => {

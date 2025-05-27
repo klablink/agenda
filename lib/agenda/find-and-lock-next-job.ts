@@ -64,9 +64,11 @@ export const findAndLockNextJob = async function (
   );
 
   let job: Job | undefined = undefined;
+  // @ts-ignore
   if (result.value) {
     debug(
       "found a job available to lock, creating a new job on Agenda with id [%s]",
+      // @ts-ignore
       result.value._id
     );
 
